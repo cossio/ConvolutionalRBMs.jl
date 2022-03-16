@@ -33,7 +33,7 @@ function imggrid(A::AbstractArray{<:Any,4})
 end
 
 #=
-Now MNIST dataset.
+Load MNIST dataset.
 =#
 
 Float = Float32
