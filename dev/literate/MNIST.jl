@@ -55,7 +55,7 @@ nothing #hide
 
 # Initialize the convolutional RBM.
 
-rbm = ConvRBMs.BinaryConvRBM(Float, 1, 50, (15,15))
+rbm = ConvRBMs.BinaryConvRBM(Float, 1, 50, (5,5))
 RBMs.initialize!(rbm, train_x)
 nothing #hide
 
