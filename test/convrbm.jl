@@ -77,6 +77,7 @@ end
         v = bitrand(c..., n..., b...)
         @test size(@inferred inputs_v_to_h(rbm, v)) == (m..., n..., b...)
         @test @inferred(ConvRBMs.output_size(rbm, v)) == (n...,)
+        @test size(@inferred sample_v_from_v(rbm, v)) == size(v)
     end
 
     # 2 convolved dimension
@@ -86,5 +87,6 @@ end
         v = bitrand(c..., n..., b...)
         @test size(@inferred inputs_v_to_h(rbm, v)) == (m..., n..., b...)
         @test @inferred(ConvRBMs.output_size(rbm, v)) == (n...,)
+        @test size(@inferred sample_v_from_v(rbm, v)) == size(v)
     end
 end

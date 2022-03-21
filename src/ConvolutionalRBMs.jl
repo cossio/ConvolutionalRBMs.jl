@@ -30,5 +30,6 @@ include("train/pcd_denseconv.jl")
 include("train/init_conv.jl")
 include("train/init_denseconv.jl")
 include("pseudolikelihood.jl")
+include("hankel.jl")
 
 end

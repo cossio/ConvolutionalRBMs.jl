@@ -55,9 +55,9 @@ function DenseConvRBM(
     kernel_size = size(w_conv)[(ndims(visible_conv) + 1):(ndims(visible_conv) + K)]
     return DenseConvRBM(
         visible_dense, visible_conv, hidden, w_dense, w_conv,
-        expand_size(Val(K), stride),
-        pad === :same ? samepad(kernel_size, dilation) : expand_size(Val(2K), pad),
-        expand_size(Val(K), dilation),
+        expand_tuple(Val(K), stride),
+        parsepad(kernel_size, dilation, pad),
+        expand_tuple(Val(K), dilation),
         groups
     )
 end

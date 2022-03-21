@@ -34,9 +34,10 @@ function ConvRBM(
     K = ndims(w) - ndims(visible) - ndims(hidden)
     kernel_size = size(w)[(ndims(visible) + 1):(ndims(visible) + K)]
     return ConvRBM(
-        visible, hidden, w, expand_size(Val(K), stride),
-        pad === :same ? samepad(kernel_size, dilation) : expand_size(Val(2K), pad),
-        expand_size(Val(K), dilation),
+        visible, hidden, w,
+        expand_tuple(Val(K), stride),
+        parsepad(kernel_size, dilation, pad),
+        expand_tuple(Val(K), dilation),
         groups
     )
 end
@@ -122,32 +123,9 @@ If `v` has `batch_size` batches, then `output_size(rbm, v)` returns `output_size
 
     size(h) == (hidden_size..., output_size..., batch_size...)
 """
-function output_size(rbm::ConvRBM, v::AbstractArray)
-    return output_size(
-        kernel_size(rbm), vsizes(rbm, v).input_size, rbm.stride, rbm.pad, rbm.dilation
-    )
-end
-
-function output_size(
-    kernel::NTuple{N,Int}, input::NTuple{N,Int},
-    stride::NTuple{N,Int}, pad::NTuple{N2,Int}, dilation::NTuple{N,Int}
-) where {N,N2}
-    @assert N2 == 2N
-    return ntuple(Val(N)) do i
-        (input[i] + pad[2i - 1] + pad[2i] - (kernel[i] - 1) * dilation[i] - 1) ÷ stride[i] + 1
-    end
-end
-
-function output_size(
-    kernel::NTuple{N,Int}, input::NTuple{N,Int}; stride = 1, pad = 0, dilation = 1
-) where {N}
-    return output_size(
-        kernel, input,
-        expand_size(Val(N), stride),
-        expand_size(Val(2N), pad),
-        expand_size(Val(N), dilation)
-    )
-end
+output_size(rbm::ConvRBM, v::AbstractArray) = output_size(
+    kernel_size(rbm), vsizes(rbm, v).input_size, rbm.stride, rbm.pad, rbm.dilation
+)
 
 function RBMs.inputs_v_to_h(rbm::ConvRBM, v::AbstractArray)
     vsz = vsizes(rbm, v)
@@ -180,14 +158,10 @@ function RBMs.energy(rbm::ConvRBM, v::AbstractArray, h::AbstractArray)
     @assert size(Eh) == (hsizes(rbm, h).output_size..., hsizes(rbm, h).batch_size...)
     Ew = interaction_energy(rbm, v, h)
     @assert size(Ew) == batch_size(rbm, v, h)
-
-    # reduce over kernel dimensions
     Ev_reduced = reshape_maybe(sum(Ev; dims=1:kernel_ndims(rbm)), vsizes(rbm, v).batch_size)
     Eh_reduced = reshape_maybe(sum(Eh; dims=1:kernel_ndims(rbm)), hsizes(rbm, h).batch_size)
-
     E = Ev_reduced .+ Eh_reduced .+ Ew
     @assert size(E) == batch_size(rbm, v, h)
-
     return E
 end
 
