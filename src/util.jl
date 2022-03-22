@@ -88,3 +88,26 @@ function output_size(
         (input[i] + pad[2i - 1] + pad[2i] - (kernel[i] - 1) * dilation[i] - 1) ÷ stride[i] + 1
     end
 end
+
+"""
+    out2in(j, k; stride = 1, dilation = 1)
+
+Given kernel index `j` and output index `k`, gets the corresponding input index `i`.
+"""
+function out2in(
+    kernel_index::CartesianIndex{N}, output_index::CartesianIndex{N};
+    stride = 1, dilation = 1
+) where {N}
+    return out2in(
+        kernel_index, output_index,
+        expand_tuple(Val(N), dilation), expand_tuple(Val(N), stride)
+    )
+end
+
+function out2in(
+    kernel_index::CartesianIndex{N}, output_index::CartesianIndex{N},
+    stride::NTuple{N,Int}, dilation::NTuple{N,Int}
+) where {N}
+    i = (Tuple(kernel_index) .- 1) .* dilation .+ (Tuple(output_index) .- 1) .* stride .+ 1
+    return CartesianIndex(i)
+end

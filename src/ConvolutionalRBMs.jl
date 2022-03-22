@@ -19,7 +19,7 @@ using RestrictedBoltzmannMachines: activations_convert_maybe, batch_size
 using RestrictedBoltzmannMachines: minibatches, _nobs
 
 include("util.jl")
-include("nnlib.jl")
+include("conv.jl")
 include("convrbm.jl")
 include("BinaryConvRBM.jl")
 include("denseconvrbm.jl")

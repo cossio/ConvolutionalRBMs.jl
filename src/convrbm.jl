@@ -10,10 +10,10 @@ struct ConvRBM{V,H,W,K,K2}
         visible::AbstractLayer, hidden::AbstractLayer, w::AbstractArray,
         stride::NTuple{K,Int}, pad::NTuple{K2,Int}, dilation::NTuple{K,Int}, groups::Int
     ) where {K,K2}
-        @assert ndims(w) == ndims(visible) + K + ndims(hidden)
-        @assert size(w)[begin:ndims(visible)] == size(visible)
-        @assert size(w)[(ndims(visible) + K + 1):end] == size(hidden)
+        @assert K == ndims(w) - ndims(visible) - ndims(hidden)
         @assert K2 == 2K
+        kernel_size = size(w)[(ndims(visible) + 1):(end - ndims(hidden))]
+        @assert size(w) == (size(visible)..., kernel_size..., size(hidden)...)
         return new{typeof(visible), typeof(hidden), typeof(w), K, K2}(
             visible, hidden, w, stride, pad, dilation, groups
         )
