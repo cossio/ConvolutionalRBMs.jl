@@ -98,3 +98,32 @@ function hankel_weight(w::AbstractArray, C::Int, in_sz::TupleN{Int}; kwargs...)
     channel_size = size(w)[1:C]
     return hankel_weight(w, channel_size, in_sz; kwargs...)
 end
+
+"""
+    hankel(convrbm, input_size)
+
+Returns a dense `RBM` equivalent to `convrbm` with replicated weights.
+"""
+function hankel(rbm::ConvRBM, in_size::NTuple{N,Int}) where {N}
+    @assert kernel_ndims(rbm) == N
+    @assert rbm.groups == 1 # groups > 1 not supported
+    w = hankel_weight(rbm.w, channel_size(rbm), in_size; rbm.stride, rbm.pad, rbm.dilation)
+    out_size = output_size(rbm, in_size)
+    vis = replicate(visible(rbm), in_size...)
+    hid = replicate(hidden(rbm), out_size...)
+    return RBM(vis, hid, w)
+end
+
+Base.repeat(l::Binary, n::Int...) = Binary(repeat(l.θ, n...))
+Base.repeat(l::Spin, n::Int...) = Spin(repeat(l.θ, n...))
+Base.repeat(l::Potts, n::Int...) = Potts(repeat(l.θ, n...))
+Base.repeat(l::Gaussian, n::Int...) = Gaussian(repeat(l.θ, n...), repeat(l.γ, n...))
+Base.repeat(l::ReLU, n::Int...) = ReLU(repeat(l.θ, n...), repeat(l.γ, n...))
+
+"""
+    replicate(layer, n...)
+
+Returns a new layer of size `(size(layer)..., n...)` by repeating the original `layer`
+along the new dimensions.
+"""
+replicate(l::AbstractLayer, n::Int...) = repeat(l, map(Returns(1), size(l))..., n...)

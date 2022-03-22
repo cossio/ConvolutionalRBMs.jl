@@ -123,8 +123,9 @@ If `v` has `batch_size` batches, then `output_size(rbm, v)` returns `output_size
 
     size(h) == (hidden_size..., output_size..., batch_size...)
 """
-output_size(rbm::ConvRBM, v::AbstractArray) = output_size(
-    kernel_size(rbm), vsizes(rbm, v).input_size, rbm.stride, rbm.pad, rbm.dilation
+output_size(rbm::ConvRBM, v::AbstractArray) = output_size(rbm, vsizes(rbm, v).input_size)
+output_size(rbm::ConvRBM, input_size::TupleN{Int}) = output_size(
+    kernel_size(rbm), input_size, rbm.stride, rbm.pad, rbm.dilation
 )
 
 function RBMs.inputs_v_to_h(rbm::ConvRBM, v::AbstractArray)

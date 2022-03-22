@@ -94,20 +94,7 @@ end
 
 Given kernel index `j` and output index `k`, gets the corresponding input index `i`.
 """
-function out2in(
-    kernel_index::CartesianIndex{N}, output_index::CartesianIndex{N};
-    stride = 1, dilation = 1
-) where {N}
-    return out2in(
-        kernel_index, output_index,
-        expand_tuple(Val(N), dilation), expand_tuple(Val(N), stride)
-    )
-end
-
-function out2in(
-    kernel_index::CartesianIndex{N}, output_index::CartesianIndex{N},
-    stride::NTuple{N,Int}, dilation::NTuple{N,Int}
-) where {N}
-    i = (Tuple(kernel_index) .- 1) .* dilation .+ (Tuple(output_index) .- 1) .* stride .+ 1
+function out2in(j::CartesianIndex{N}, k::CartesianIndex{N}; stride = 1, dilation = 1) where {N}
+    i = (Tuple(j) .- 1) .* dilation .+ (Tuple(k) .- 1) .* stride .+ 1
     return CartesianIndex(i)
 end

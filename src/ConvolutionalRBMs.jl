@@ -10,7 +10,8 @@ import RestrictedBoltzmannMachines as RBMs
 
 using Random: randn!
 using ValueHistories: MVHistory
-using RestrictedBoltzmannMachines: AbstractLayer, RBM, Potts
+using RestrictedBoltzmannMachines: AbstractLayer, RBM
+using RestrictedBoltzmannMachines: Binary, Spin, Potts, Gaussian, ReLU, dReLU, pReLU, xReLU
 using RestrictedBoltzmannMachines: visible, hidden, weights
 using RestrictedBoltzmannMachines: inputs_v_to_h, inputs_h_to_v, transfer_sample
 using RestrictedBoltzmannMachines: sample_h_from_h, sample_v_from_v, sample_v_from_h, sample_h_from_v
