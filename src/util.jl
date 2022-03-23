@@ -9,7 +9,8 @@ Like `reshape(x, shape)`, except that zero-dimensional outputs are returned as s
 reshape_maybe(x::Number, ::Tuple{}) = x
 reshape_maybe(x::AbstractArray, ::Tuple{}) = only(x)
 reshape_maybe(x::AbstractArray, sz::Tuple{Int,Vararg{Int}}) = reshape(x, sz)
-reshape_maybe(x::Union{Number,AbstractArray}, sz::Int...) = reshape_maybe(x, sz)
+reshape_maybe(x::Number) = x
+reshape_maybe(x::AbstractArray, sz::Int...) = reshape_maybe(x, sz)
 
 """
     samepad(kernel_size, dilation = 1)
@@ -97,4 +98,56 @@ Given kernel index `j` and output index `k`, gets the corresponding input index 
 function out2in(j::CartesianIndex{N}, k::CartesianIndex{N}; stride = 1, dilation = 1) where {N}
     i = (Tuple(j) .- 1) .* dilation .+ (Tuple(k) .- 1) .* stride .+ 1
     return CartesianIndex(i)
+end
+
+"""
+    translate(v, channel_size, input_size, Δ; mode = :pad, fillvalue = 0)
+
+Translates an image along input dimensions by `Δ`.
+"""
+function translate(
+    v::AbstractArray,
+    channel_size::NTuple{C,Int},
+    input_size::NTuple{N,Int},
+    Δ::CartesianIndex{N};
+    mode::Symbol = :pad,
+    fillvalue = zero(eltype(v))
+) where {C,N}
+    batch_size = size(v)[(C + N + 1):end]
+    @assert size(v) == (channel_size..., input_size..., batch_size...)
+    if mode === :pad
+        Δv = similar(v)
+        for i in CartesianIndices(input_size)
+            if i + Δ ∈ CartesianIndices(input_size)
+                for n in CartesianIndices(batch_size), c in CartesianIndices(channel_size)
+                    Δv[c,i,n] = v[c, i + Δ, n]
+                end
+            else
+                for n in CartesianIndices(batch_size), c in CartesianIndices(channel_size)
+                    Δv[c,i,n] = fillvalue
+                end
+            end
+        end
+        return Δv
+    elseif mode === :periodic
+        Δv = similar(v)
+        for i in CartesianIndices(input_size)
+            p = mod1.(Tuple(i + Δ), input_size)
+            for n in CartesianIndices(batch_size), c in CartesianIndices(channel_size)
+                Δv[c,i,n] = v[c, p, n]
+            end
+        end
+        return Δv
+    end
+end
+
+function translate(
+    v::AbstractArray,
+    channel_size::NTuple{C,Int},
+    input_size::NTuple{N,Int},
+    Δ::NTuple{N,Int};
+    mode::Symbol = :pad,
+    fillvalue = zero(eltype(v))
+) where {C,N}
+    return translate(v, channel_size, input_size, CartesianIndex(Δ); mode, fillvalue)
 end

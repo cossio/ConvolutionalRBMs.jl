@@ -1,8 +1,12 @@
 using Test: @testset, @test, @inferred
-using RestrictedBoltzmannMachines: BinaryRBM, inputs_v_to_h, free_energy
+using RestrictedBoltzmannMachines: BinaryRBM, Binary, inputs_v_to_h, free_energy
 using RestrictedBoltzmannMachines: visible, hidden, weights
 using ConvolutionalRBMs: hankel_image, hankel_weight, hankel, output_size, out2in
-using ConvolutionalRBMs: BinaryConvRBM
+using ConvolutionalRBMs: BinaryConvRBM, replicate
+
+@testset "replicate" begin
+    @test size(@inferred replicate(Binary(zeros(2,3)),5,7)) == (2,3,5,7)
+end
 
 @testset "hankel" begin
     channel_sz = (2,3)

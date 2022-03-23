@@ -1,15 +1,15 @@
 module ConvolutionalRBMs
 
 import Random
-import LinearAlgebra
 import Flux
 import Zygote
 import NNlib
-import LogExpFunctions
 import RestrictedBoltzmannMachines as RBMs
 
 using Random: randn!
+using LinearAlgebra: dot
 using ValueHistories: MVHistory
+using LogExpFunctions: logsumexp, softmax, log1pexp
 using RestrictedBoltzmannMachines: AbstractLayer, RBM
 using RestrictedBoltzmannMachines: Binary, Spin, Potts, Gaussian, ReLU, dReLU, pReLU, xReLU
 using RestrictedBoltzmannMachines: visible, hidden, weights
@@ -23,14 +23,18 @@ include("util.jl")
 include("conv.jl")
 include("convrbm.jl")
 include("BinaryConvRBM.jl")
-include("denseconvrbm.jl")
-include("train/zerosum_conv.jl")
-include("train/zerosum_denseconv.jl")
-include("train/pcd_conv.jl")
-include("train/pcd_denseconv.jl")
-include("train/init_conv.jl")
-include("train/init_denseconv.jl")
-include("pseudolikelihood.jl")
 include("hankel.jl")
+include("pooling.jl")
+
+include("zerosum.jl")
+include("init.jl")
+include("categorical.jl")
+include("pcd.jl")
+include("pseudolikelihood.jl")
+
+include("denseconv/rbm.jl")
+include("denseconv/zerosum.jl")
+include("denseconv/pcd.jl")
+include("denseconv/init.jl")
 
 end

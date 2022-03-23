@@ -18,7 +18,7 @@ function pcd!(rbm::ConvRBM, data::AbstractArray;
                 contrastive_divergence(rbm, vd, vm; wd)
             end
             # removes keys with no gradient
-            ∂ = Base.structdiff(only(gs), NamedTuple{(:stride, :pad, :dilation, :groups)})
+            ∂ = Base.structdiff(only(gs), NamedTuple{(:stride, :pad, :dilation, :groups, :pool)})
             Δ = RBMs.update!(∂, rbm, optim) # update step
             callback(; rbm, epoch, batch_idx, vm, vd, wd, history, ∂, Δ)
             RBMs.update!(rbm, Δ)

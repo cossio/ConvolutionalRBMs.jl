@@ -114,12 +114,6 @@ function hankel(rbm::ConvRBM, in_size::NTuple{N,Int}) where {N}
     return RBM(vis, hid, w)
 end
 
-Base.repeat(l::Binary, n::Int...) = Binary(repeat(l.θ, n...))
-Base.repeat(l::Spin, n::Int...) = Spin(repeat(l.θ, n...))
-Base.repeat(l::Potts, n::Int...) = Potts(repeat(l.θ, n...))
-Base.repeat(l::Gaussian, n::Int...) = Gaussian(repeat(l.θ, n...), repeat(l.γ, n...))
-Base.repeat(l::ReLU, n::Int...) = ReLU(repeat(l.θ, n...), repeat(l.γ, n...))
-
 """
     replicate(layer, n...)
 

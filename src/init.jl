@@ -15,7 +15,7 @@ function RBMs.initialize!(rbm::ConvRBM; ϵ::Real = 1e-6, λ::Real = 0.1)
 end
 
 function RBMs.initialize_w!(rbm::ConvRBM, data::AbstractArray; ϵ::Real = 1e-6, λ::Real = 0.1)
-    d = LinearAlgebra.dot(data, data) / prod(vsizes(rbm, data).batch_size)
+    d = dot(data, data) / prod(vsizes(rbm, data).batch_size)
     randn!(weights(rbm))
     J = prod(kernel_size(rbm))
     K = prod(output_size(rbm, data))

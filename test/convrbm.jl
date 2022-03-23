@@ -16,50 +16,52 @@ using ConvolutionalRBMs: vsizes, hsizes, BinaryConvRBM, output_size, out2in
     randn!(visible(rbm).θ)
     randn!(hidden(rbm).θ)
 
+    @test size(visible(rbm)) == (3,)
+    @test size(hidden(rbm)) == (2,)
     @test ConvRBMs.channel_size(rbm) == (3,)
     @test ConvRBMs.channel_length(rbm) == 3
     @test ConvRBMs.channel_ndims(rbm) == 1
     @test ConvRBMs.kernel_size(rbm) == (3,)
     @test ConvRBMs.kernel_ndims(rbm) == 1
-    @test ConvRBMs.kernel_dims(rbm) == 2:2
-    @test size(hidden(rbm)) == (2,)
+    @test ConvRBMs.input_dims(rbm) == 2:2
+    @test ConvRBMs.output_dims(rbm) == 2:2
 
-    v = Array{Float64}(bitrand(3,5))
-    h = Array{Float64}(bitrand(2,3))
+    v = bitrand(3,5)
+    h = bitrand(2,3)
     @test @inferred(energy(rbm, v, h)) isa Number
     @test @inferred(free_energy(rbm, v)) isa Number
     @test dot(@inferred(inputs_v_to_h(rbm, v)), h) ≈ -interaction_energy(rbm, v, h)
     @test dot(@inferred(inputs_h_to_v(rbm, h)), v) ≈ -interaction_energy(rbm, v, h)
     @test @inferred(output_size(rbm, v)) == (3,)
 
-    v = Array{Float64}(bitrand(3,5,2))
-    h = Array{Float64}(bitrand(2,3))
+    v = bitrand(3,5,2)
+    h = bitrand(2,3)
     @test size(@inferred energy(rbm, v, h)) == (2,)
     @test size(@inferred free_energy(rbm, v)) == (2,)
     @test vec(sum(@inferred(inputs_v_to_h(rbm, v)) .* h; dims=1:2)) ≈ -interaction_energy(rbm, v, h)
     @test vec(sum(@inferred(inputs_h_to_v(rbm, h)) .* v; dims=1:2)) ≈ -interaction_energy(rbm, v, h)
     @test @inferred(output_size(rbm, v)) == (3,)
 
-    v = Array{Float64}(bitrand(3,5))
-    h = Array{Float64}(bitrand(2,3,2))
+    v = bitrand(3,5)
+    h = bitrand(2,3,2)
     @test size(@inferred energy(rbm, v, h)) == (2,)
     @test vec(sum(@inferred(inputs_v_to_h(rbm, v)) .* h; dims=1:2)) ≈ -interaction_energy(rbm, v, h)
     @test vec(sum(@inferred(inputs_h_to_v(rbm, h)) .* v; dims=1:2)) ≈ -interaction_energy(rbm, v, h)
     @test @inferred(output_size(rbm, v)) == (3,)
 
-    v = Array{Float64}(bitrand(3,5,2))
-    h = Array{Float64}(bitrand(2,3,2))
+    v = bitrand(3,5,2)
+    h = bitrand(2,3,2)
     @test size(@inferred energy(rbm, v, h)) == (2,)
     @test vec(sum(@inferred(inputs_v_to_h(rbm, v)) .* h; dims=1:2)) ≈ -interaction_energy(rbm, v, h)
     @test vec(sum(@inferred(inputs_h_to_v(rbm, h)) .* v; dims=1:2)) ≈ -interaction_energy(rbm, v, h)
     @test @inferred(output_size(rbm, v)) == (3,)
 
-    v = Array{Float64}(bitrand(3,5,3))
-    h = Array{Float64}(bitrand(2,3,2))
+    v = bitrand(3,5,3)
+    h = bitrand(2,3,2)
     @test_throws Exception energy(rbm, v, h)
 
-    v = Array{Float64}(bitrand(3,5,2))
-    h = Array{Float64}(bitrand(2,3,2))
+    v = bitrand(3,5,2)
+    h = bitrand(2,3,2)
     @test size(@inferred inputs_v_to_h(rbm, v)) == size(h)
     @test size(@inferred inputs_h_to_v(rbm, h)) == size(v)
     @test size(@inferred sample_h_from_v(rbm, v)) == size(h)
@@ -99,7 +101,7 @@ end
     randn!(weights(rbm))
     in_sz = (7,6,2)
     batch_sz = (2,3)
-    v = Array{Float64}(bitrand(channel_sz..., in_sz..., batch_sz...))
+    v = bitrand(channel_sz..., in_sz..., batch_sz...)
     out_sz = output_size(rbm, v)
     Ih = zeros(hidden_sz..., out_sz..., batch_sz...)
     for j in CartesianIndices(kernel_sz), k in CartesianIndices(out_sz)
@@ -110,7 +112,7 @@ end
     end
     @test Ih ≈ inputs_v_to_h(rbm, v)
 
-    h = Array{Float64}(bitrand(hidden_sz..., out_sz..., batch_sz...))
+    h = bitrand(hidden_sz..., out_sz..., batch_sz...)
     Iv = zeros(channel_sz..., in_sz..., batch_sz...)
     for j in CartesianIndices(kernel_sz), k in CartesianIndices(out_sz)
         i = out2in(j, k)

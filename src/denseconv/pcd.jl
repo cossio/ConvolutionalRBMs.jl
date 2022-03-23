@@ -27,7 +27,7 @@ function pcd!(
                 contrastive_divergence(rbm, vd_dense, vd_conv, vm_dense, vm_conv; wd)
             end
             # removes keys with no gradient
-            ∂ = Base.structdiff(only(gs), NamedTuple{(:stride, :pad, :dilation, :groups)})
+            ∂ = Base.structdiff(only(gs), NamedTuple{(:stride, :pad, :dilation, :groups, :pool)})
             push!(history, :∂, RBMs.gradnorms(∂))
             RBMs.update!(rbm, RBMs.update!(∂, rbm, optim))
             push!(history, :Δ, RBMs.gradnorms(∂))

@@ -8,6 +8,7 @@ struct DenseConvRBM{Vd,Vc,H,Wd,Wc,K,K2}
     pad::NTuple{K2,Int}
     dilation::NTuple{K,Int}
     groups::Int
+    pool::Bool
     """
         DenseConvRBM(visible_dense, visible_conv, hidden, weights_dense, weights_conv)
 
@@ -20,7 +21,8 @@ struct DenseConvRBM{Vd,Vc,H,Wd,Wc,K,K2}
         hidden::AbstractLayer,
         w_dense::AbstractArray,
         w_conv::AbstractArray,
-        stride::NTuple{K,Int}, pad::NTuple{K2,Int}, dilation::NTuple{K,Int}, groups::Int
+        stride::NTuple{K,Int}, pad::NTuple{K2,Int}, dilation::NTuple{K,Int}, groups::Int,
+        pool::Bool = false
     ) where {K,K2}
         # dense size checks
         @assert size(w_dense) == (size(visible_dense)..., size(hidden)...)
@@ -38,7 +40,7 @@ struct DenseConvRBM{Vd,Vc,H,Wd,Wc,K,K2}
         # construct
         return new{V_dens, V_conv, H, W_dens, W_conv, K, K2}(
             visible_dense, visible_conv, hidden, w_dense, w_conv,
-            stride, pad, dilation, groups
+            stride, pad, dilation, groups, pool
         )
     end
 end
@@ -49,7 +51,7 @@ function DenseConvRBM(
     hidden::AbstractLayer,
     w_dense::AbstractArray,
     w_conv::AbstractArray;
-    stride = 1, pad = 0, dilation = 1, groups::Int = 1
+    stride = 1, pad = 0, dilation = 1, groups::Int = 1, pool::Bool = false
 )
     K = ndims(w_conv) - ndims(visible_conv) - ndims(hidden)
     kernel_size = size(w_conv)[(ndims(visible_conv) + 1):(ndims(visible_conv) + K)]
@@ -58,7 +60,7 @@ function DenseConvRBM(
         expand_tuple(Val(K), stride),
         parsepad(kernel_size, dilation, pad),
         expand_tuple(Val(K), dilation),
-        groups
+        groups, pool
     )
 end
 
@@ -71,7 +73,7 @@ parts(rbm::DenseConvRBM) = (
     dense = RBM(rbm.visible_dense, rbm.hidden, rbm.w_dense),
     conv = ConvRBM(
         rbm.visible_conv, rbm.hidden, rbm.w_conv;
-        stride = rbm.stride, pad = rbm.pad, dilation = rbm.dilation, groups = rbm.groups
+        rbm.stride, rbm.pad, rbm.dilation, rbm.groups, rbm.pool
     )
 )
 
@@ -167,6 +169,8 @@ function RBMs.interaction_energy(
 end
 
 function RBMs.free_energy(rbm::DenseConvRBM, v_dense::AbstractArray, v_conv::AbstractArray; β::Real = 1)
+    rbm.pool && error("Pooling not implemented yet for DenseConvRBM")
+
     E_v_dense = energy(rbm.visible_dense, v_dense)
     E_v_conv = energy(rbm.visible_conv, v_conv)
     I = inputs_v_to_h(rbm, v_dense, v_conv)
@@ -187,6 +191,7 @@ end
 function RBMs.sample_h_from_v(
     rbm::DenseConvRBM, v_dense::AbstractArray, v_conv::AbstractArray; β::Real = true
 )
+    rbm.pool && error("Pooling not implemented yet for DenseConvRBM")
     inputs = inputs_v_to_h(rbm, v_dense, v_conv)
     return transfer_sample(hidden(rbm), inputs; β)
 end

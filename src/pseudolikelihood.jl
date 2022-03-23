@@ -21,7 +21,7 @@ function log_pseudolikelihood_sites(
     β::Real=true
 )
     ΔE = substitution_matrix_sites(rbm, v, sites; β)
-    lPL = -LogExpFunctions.logsumexp(-β * ΔE; dims=1)
+    lPL = -logsumexp(-β * ΔE; dims=1)
     return reshape(lPL, batch_size(rbm, v))
 end
 
@@ -57,7 +57,7 @@ function log_pseudolikelihood_sites(
     end
     F = free_energy(rbm, v; β)
     F_ = free_energy(rbm, v_; β)
-    return -LogExpFunctions.log1pexp.(β * (F - F_))
+    return -log1pexp.(β * (F - F_))
 end
 
 function log_pseudolikelihood_sites(
@@ -72,5 +72,5 @@ function log_pseudolikelihood_sites(
     end
     F = free_energy(rbm, v; β)
     F_ = free_energy(rbm, v_; β)
-    return -LogExpFunctions.log1pexp.(β * (F - F_))
+    return -log1pexp.(β * (F - F_))
 end

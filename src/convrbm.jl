@@ -6,22 +6,24 @@ struct ConvRBM{V,H,W,K,K2}
     pad::NTuple{K2,Int}
     dilation::NTuple{K,Int}
     groups::Int
+    pool::Bool
     function ConvRBM(
         visible::AbstractLayer, hidden::AbstractLayer, w::AbstractArray,
-        stride::NTuple{K,Int}, pad::NTuple{K2,Int}, dilation::NTuple{K,Int}, groups::Int
+        stride::NTuple{K,Int}, pad::NTuple{K2,Int}, dilation::NTuple{K,Int}, groups::Int,
+        pool::Bool = false
     ) where {K,K2}
         @assert K == ndims(w) - ndims(visible) - ndims(hidden)
         @assert K2 == 2K
         kernel_size = size(w)[(ndims(visible) + 1):(end - ndims(hidden))]
         @assert size(w) == (size(visible)..., kernel_size..., size(hidden)...)
         return new{typeof(visible), typeof(hidden), typeof(w), K, K2}(
-            visible, hidden, w, stride, pad, dilation, groups
+            visible, hidden, w, stride, pad, dilation, groups, pool
         )
     end
 end
 
 """
-    ConvRBM(visible, hidden, weights; stride = 1, pad = 0, dilation = 1, groups = 1)
+    ConvRBM(visible, hidden, weights; stride = 1, pad = 0, dilation = 1, groups = 1, pool = false)
 
 Convolutional RBM.
 
@@ -29,7 +31,7 @@ Convolutional RBM.
 """
 function ConvRBM(
     visible::AbstractLayer, hidden::AbstractLayer, w::AbstractArray;
-    stride = 1, pad = 0, dilation = 1, groups::Int = 1
+    stride = 1, pad = 0, dilation = 1, groups::Int = 1, pool::Bool = false
 )
     K = ndims(w) - ndims(visible) - ndims(hidden)
     kernel_size = size(w)[(ndims(visible) + 1):(ndims(visible) + K)]
@@ -38,7 +40,7 @@ function ConvRBM(
         expand_tuple(Val(K), stride),
         parsepad(kernel_size, dilation, pad),
         expand_tuple(Val(K), dilation),
-        groups
+        groups, pool
     )
 end
 
@@ -63,9 +65,12 @@ channel_size(rbm::ConvRBM) = size(visible(rbm))
 channel_length(rbm::ConvRBM) = length(visible(rbm))
 channel_ndims(rbm::ConvRBM) = ndims(visible(rbm))
 
-kernel_size(rbm::ConvRBM) = size(weights(rbm))[kernel_dims(rbm)]
+kernel_size(rbm::ConvRBM) = size(weights(rbm))[input_dims(rbm)]
 kernel_ndims(rbm::ConvRBM) = length(kernel_size(rbm))
-kernel_dims(rbm::ConvRBM) = (channel_ndims(rbm) + 1):(ndims(weights(rbm)) - ndims(hidden(rbm)))
+
+input_dims(rbm::ConvRBM) = (channel_ndims(rbm) + 1):(ndims(weights(rbm)) - ndims(hidden(rbm)))
+output_dims(rbm::ConvRBM) = (ndims(hidden(rbm)) + 1):(ndims(hidden(rbm)) + kernel_ndims(rbm))
+
 
 """
     vsizes(convrbm, v) -> (channel_size, input_size, batch_size)
@@ -134,7 +139,7 @@ function RBMs.inputs_v_to_h(rbm::ConvRBM, v::AbstractArray)
     vflat = reshape(v, channel_length(rbm), vsz.input_size..., prod(vsz.batch_size))
     Iflat = conv_v2h(
         wflat, activations_convert_maybe(wflat, vflat);
-        stride = rbm.stride, pad = rbm.pad, dilation = rbm.dilation, groups = rbm.groups
+        rbm.stride, rbm.pad, rbm.dilation, rbm.groups
     )
     @assert size(Iflat) == (length(hidden(rbm)), size(Iflat)[2:end-1]..., prod(vsz.batch_size))
     return reshape(Iflat, size(hidden(rbm))..., size(Iflat)[2:end-1]..., vsz.batch_size...)
@@ -146,7 +151,7 @@ function RBMs.inputs_h_to_v(rbm::ConvRBM, h::AbstractArray)
     hflat = reshape(h, length(hidden(rbm)), hsz.output_size..., prod(hsz.batch_size))
     Iflat = conv_h2v(
         wflat, activations_convert_maybe(wflat, hflat);
-        stride = rbm.stride, pad = rbm.pad, dilation = rbm.dilation, groups = rbm.groups
+        rbm.stride, rbm.pad, rbm.dilation, rbm.groups
     )
     @assert size(Iflat) == (channel_length(rbm), size(Iflat)[2:end-1]..., prod(hsz.batch_size))
     return reshape(Iflat, channel_size(rbm)..., size(Iflat)[2:end-1]..., hsz.batch_size...)
@@ -174,21 +179,20 @@ function RBMs.interaction_energy(rbm::ConvRBM, v::AbstractArray, h::AbstractArra
     return reshape_maybe(E, bsz)
 end
 
-function RBMs.free_energy(rbm::ConvRBM, v::AbstractArray; β::Real = true)
-    E = energy(rbm.visible, v)
-    I = inputs_v_to_h(rbm, v)
-    F = free_energy(rbm.hidden, I; β)
-    @assert size(E) == (vsizes(rbm, v).input_size..., vsizes(rbm, v).batch_size...)
-    @assert size(F) == (hsizes(rbm, I).output_size..., vsizes(rbm, v).batch_size...)
-    # reduce over kernel dims
-    E_conv = reshape_maybe(sum(E; dims=1:kernel_ndims(rbm)), vsizes(rbm, v).batch_size)
-    F_conv = reshape_maybe(sum(F; dims=1:kernel_ndims(rbm)), vsizes(rbm, v).batch_size)
-    return E_conv + F_conv
+function RBMs.free_energy(rbm::ConvRBM, v::AbstractArray; β::Real = 1)
+    if rbm.pool
+        return free_energy_pooled(rbm, v; β)
+    else
+        return free_energy_nopool(rbm, v; β)
+    end
 end
 
 function RBMs.sample_h_from_v(rbm::ConvRBM, v::AbstractArray; β::Real = true)
-    inputs = RBMs.inputs_v_to_h(rbm, v)
-    return RBMs.transfer_sample(hidden(rbm), inputs; β)
+    if rbm.pool
+        return sample_h_from_v_pooled(rbm, v; β)
+    else
+        return sample_h_from_v_nopool(rbm, v; β)
+    end
 end
 
 function RBMs.sample_v_from_h(rbm::ConvRBM, h::AbstractArray; β::Real = true)

@@ -27,9 +27,9 @@ using ConvolutionalRBMs: vsizes, hsizes, parts, inputs_h_to_v_dense, inputs_h_to
         randn(C..., J..., M...) # weights conv
     )
 
-    v_dense = Array{Float64}(bitrand(N..., B...))
-    v_conv = Array{Float64}(bitrand(C..., (J .+ K .- 1)..., B...))
-    h = Array{Float64}(bitrand(M..., K..., B...))
+    v_dense = bitrand(N..., B...)
+    v_conv = bitrand(C..., (J .+ K .- 1)..., B...)
+    h = bitrand(M..., K..., B...)
     @test size(@inferred inputs_v_to_h(rbm, v_dense, v_conv)) == size(h)
     @test size(@inferred inputs_h_to_v_dense(rbm, h)) == size(v_dense)
     @test size(@inferred inputs_h_to_v_conv(rbm, h)) == size(v_conv)
