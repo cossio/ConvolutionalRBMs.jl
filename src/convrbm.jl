@@ -27,7 +27,7 @@ end
 
 Convolutional RBM.
 
-`pad == :same` uses [samepad](@ref) to infer a padding that preserves spatial dimensions.
+`pad == :same` uses `samepad(...)` to infer a padding that preserves spatial dimensions.
 """
 function ConvRBM(
     visible::AbstractLayer, hidden::AbstractLayer, w::AbstractArray;
