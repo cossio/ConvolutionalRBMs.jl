@@ -39,9 +39,10 @@ Load MNIST dataset.
 
 Float = Float32
 train_x, train_y = MLDatasets.MNIST.traindata()
-train_x = Array{Float}(train_x[:, :, train_y .== 2] .≥ 0.5)
-train_y = train_y[train_y .== 2]
-println(length(train_y), " training images")
+digit = 2
+train_x = Array{Float}(train_x[:, :, train_y .== digit] .≥ 0.5)
+train_y = train_y[train_y .== digit]
+println(length(train_y), " training images (for digit = $digit)")
 nothing #hide
 
 # Reshape for convolutional input
@@ -51,7 +52,7 @@ nothing #hide
 
 # Initialize the convolutional RBM.
 
-rbm = ConvRBMs.BinaryConvRBM(Float, 1, 10, (15,15); pad=:same)
+rbm = ConvRBMs.BinaryConvRBM(Float, 1, 16, (15,15); pad=:same, pool=true)
 RBMs.initialize!(rbm, train_x)
 nothing #hide
 
@@ -70,12 +71,10 @@ nothing #hide
 
 # Train!
 
-@time for iter in 1:50
-    for epoch in 1:10
-        ConvRBMs.pcd!(rbm, train_x; vm, history, batchsize, optim, epochs=100)
-    end
-    lpl = log_pseudolikelihood(rbm, train_x[:, :, :, rand(1:size(train_x)[end], 256)])
-    push!(history, :lpl, mean(lpl))
+@time for iter in 1:20
+    ConvRBMs.pcd!(rbm, train_x; vm, history, batchsize, optim, epochs=5)
+    lpl = log_pseudolikelihood(rbm, train_x[:, :, :, rand(1:size(train_x)[end], 1024)])
+    push!(history, :lpl_ave, mean(lpl))
     push!(history, :lpl_std, std(lpl))
 end
 nothing #hide
@@ -84,11 +83,12 @@ nothing #hide
 
 fig = Makie.Figure(resolution=(600,300))
 ax = Makie.Axis(fig[1,1], xlabel = "train time", ylabel="pseudolikelihood")
-Makie.band!(ax, get(history, :lpl)[1],
-    get(history, :lpl)[2] - get(history, :lpl_std)[2]/2,
-    get(history, :lpl)[2] + get(history, :lpl_std)[2]/2
+Makie.band!(ax, get(history, :lpl_ave)[1],
+    get(history, :lpl_ave)[2] - get(history, :lpl_std)[2]/2,
+    get(history, :lpl_ave)[2] + get(history, :lpl_std)[2]/2,
+    color=:lightblue
 )
-Makie.lines!(ax, get(history, :lpl)...)
+Makie.lines!(ax, get(history, :lpl_ave)..., color=:blue)
 fig
 
 #=
@@ -98,7 +98,7 @@ Now let's generate some random RBM samples.
 nrows, ncols = 10, 15
 nsteps = 1000
 fantasy_F = zeros(nrows*ncols, nsteps)
-fantasy_x = bitrand(28,28,nrows*ncols)
+fantasy_x = bitrand(1,28,28,nrows*ncols)
 fantasy_F[:,1] .= RBMs.free_energy(rbm, fantasy_x)
 for t in 2:nsteps
     @time fantasy_x .= RBMs.sample_v_from_v(rbm, fantasy_x)
@@ -112,8 +112,8 @@ fig = Makie.Figure(resolution=(400,300))
 ax = Makie.Axis(fig[1,1], xlabel="sampling time", ylabel="free energy")
 fantasy_F_μ = vec(mean(fantasy_F; dims=1))
 fantasy_F_σ = vec(std(fantasy_F; dims=1))
-Makie.band!(ax, 1:steps, fantasy_F_μ - fantasy_F_σ/2, fantasy_F_μ + fantasy_F_σ/2)
-Makie.lines!(ax, 1:steps, fantasy_F_μ)
+Makie.band!(ax, 1:nsteps, fantasy_F_μ - fantasy_F_σ/2, fantasy_F_μ + fantasy_F_σ/2)
+Makie.lines!(ax, 1:nsteps, fantasy_F_μ)
 fig
 
 # Plot the resulting samples.

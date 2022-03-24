@@ -52,7 +52,7 @@ nothing #hide
 #= Initialize the convolutional RBM. Since the kernel size is equal to the
 image size (28,28), this is actually equivalent to having a dense RBM. =#
 
-rbm = ConvRBMs.BinaryConvRBM(Float, 1, 200, (28,28); pad=0)
+rbm = ConvRBMs.BinaryConvRBM(Float, 1, 200, (28,28); pad=0, pool=false)
 RBMs.initialize!(rbm, train_x)
 nothing #hide
 
