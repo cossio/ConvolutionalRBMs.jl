@@ -14,6 +14,7 @@ import ConvolutionalRBMs as ConvRBMs
 using Statistics: mean
 using ValueHistories: MVHistory
 using Random: bitrand
+using RestrictedBoltzmannMachines: visible, hidden, weights
 nothing #hide
 
 #=
@@ -38,32 +39,26 @@ Load MNIST dataset.
 
 Float = Float32
 train_x, train_y = MLDatasets.MNIST.traindata()
-tests_x, tests_y = MLDatasets.MNIST.testdata()
-train_x = Array{Float}(train_x[:, :, train_y .== 8] .≥ 0.5)
-tests_x = Array{Float}(tests_x[:, :, tests_y .== 8] .≥ 0.5)
-train_y = train_y[train_y .== 8]
-tests_y = tests_y[tests_y .== 8]
-train_nsamples = length(train_y)
-tests_nsamples = length(tests_y)
-(train_nsamples, tests_nsamples)
+train_x = Array{Float}(train_x[:, :, train_y .== 2] .≥ 0.5)
+train_y = train_y[train_y .== 2]
+println(length(train_y), " training images")
+nothing #hide
 
 # Reshape for convolutional input
 
 train_x = reshape(train_x, 1, 28, 28, :) # channel dims, input dims, batch dims
-tests_x = reshape(tests_x, 1, 28, 28, :)
 nothing #hide
 
-# Initialize the convolutional RBM.
+#= Initialize the convolutional RBM. Since the kernel size is equal to the
+image size (28,28), this is actually equivalent to having a dense RBM. =#
 
-rbm = ConvRBMs.BinaryConvRBM(Float, 1, 50, (15,15))
+rbm = ConvRBMs.BinaryConvRBM(Float, 1, 200, (28,28); pad=0, pool=false)
 RBMs.initialize!(rbm, train_x)
 nothing #hide
 
 # Train
 
-batchsize = 128
-vm = bitrand(1, 28, 28, batchsize) # Initialize fantasy chains
-history = RBMs.pcd!(rbm, train_x; epochs=100, vm, batchsize)
+history = ConvRBMs.pcd!(rbm, train_x; epochs=100, batchsize=256)
 nothing #hide
 
 #=
@@ -71,7 +66,7 @@ Now let's generate some random RBM samples.
 =#
 
 nrows, ncols = 10, 15
-@time fantasy_x = RBMs.sample_v_from_v(rbm, bitrand(1,28,28,nrows*ncols); steps=10000)
+@time fantasy_x = RBMs.sample_v_from_v(rbm, bitrand(1,28,28,nrows*ncols); steps=1000)
 nothing #hide
 
 # Plot the resulting samples.
