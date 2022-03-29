@@ -30,7 +30,19 @@ a matrix of size `(width * ncols, height * nrows)`, that can be plotted in a hea
 to display all images.
 """
 function imggrid(A::AbstractArray{<:Any,4})
-    return reshape(permutedims(A, (1,3,2,4)), size(A,1)*size(A,3), size(A,2)*size(A,4))
+    (width, height, ncols, nrows) = size(A)
+    return reshape(permutedims(A, (1,3,2,4)), width * ncols, height * nrows)
+end
+
+imggrid_border(A::AbstractArray{<:Any,4}, borderval = 1) = imggrid(bordered(A, borderval))
+
+function bordered(A::AbstractArray{<:Any,4}, borderval = 1)
+    return mapslices(A; dims=(1,2)) do img::AbstractMatrix
+        [   fill(borderval, 1, size(img, 2) + 2);
+            fill(borderval, size(img, 1)) img fill(borderval, size(img, 1));
+            fill(borderval, 1, size(img, 2) + 2)
+        ]
+    end
 end
 
 #=
