@@ -124,3 +124,13 @@ Makie.image!(ax, imggrid(reshape(fantasy_x, 28, 28, ncols, nrows)), colorrange=(
 Makie.hidedecorations!(ax)
 Makie.hidespines!(ax)
 fig
+
+# Plot the filters learned
+
+wncols = 4; wnrows = 4
+fig = Makie.Figure(resolution=(80wncols, 80wnrows))
+ax = Makie.Axis(fig[1,1], yreversed=true)
+Makie.image!(ax, imggrid_border(reshape(rbm.w ./ maximum(abs, rbm.w; dims=(2,3)), 15, 15, wncols, wnrows)))
+Makie.hidedecorations!(ax)
+Makie.hidespines!(ax)
+fig

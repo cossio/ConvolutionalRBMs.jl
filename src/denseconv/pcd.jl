@@ -47,7 +47,7 @@ function contrastive_divergence(
     wd = nothing, wm = nothing
 )
     Fd = mean_free_energy(rbm, vd_dense, vd_conv; wts = wd)
-    Fm = RBMs.mean_free_energy(rbm, vm_dense, vm_conv; wts = wm)
+    Fm = mean_free_energy(rbm, vm_dense, vm_conv; wts = wm)
     return Fd - Fm
 end
 
@@ -55,7 +55,7 @@ function mean_free_energy(
     rbm::DenseConvRBM, v_dense::AbstractArray, v_conv::AbstractArray; wts = nothing
 )::Number
     F = RBMs.free_energy(rbm, v_dense, v_conv)
-    if isempty(batch_size(rbm, v_dense, v_cons))
+    if isempty(batch_size(rbm, v_dense, v_conv))
         wts::Nothing
         return F
     else
