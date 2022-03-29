@@ -30,7 +30,19 @@ a matrix of size `(width * ncols, height * nrows)`, that can be plotted in a hea
 to display all images.
 """
 function imggrid(A::AbstractArray{<:Any,4})
-    return reshape(permutedims(A, (1,3,2,4)), size(A,1)*size(A,3), size(A,2)*size(A,4))
+    (width, height, ncols, nrows) = size(A)
+    return reshape(permutedims(A, (1,3,2,4)), width * ncols, height * nrows)
+end
+
+imggrid_border(A::AbstractArray{<:Any,4}, borderval = 1) = imggrid(bordered(A, borderval))
+
+function bordered(A::AbstractArray{<:Any,4}, borderval = 1)
+    return mapslices(A; dims=(1,2)) do img::AbstractMatrix
+        [   fill(borderval, 1, size(img, 2) + 2);
+            fill(borderval, size(img, 1)) img fill(borderval, size(img, 1));
+            fill(borderval, 1, size(img, 2) + 2)
+        ]
+    end
 end
 
 #=
@@ -121,6 +133,16 @@ fig
 fig = Makie.Figure(resolution=(40ncols, 40nrows))
 ax = Makie.Axis(fig[1,1], yreversed=true)
 Makie.image!(ax, imggrid(reshape(fantasy_x, 28, 28, ncols, nrows)), colorrange=(1,0))
+Makie.hidedecorations!(ax)
+Makie.hidespines!(ax)
+fig
+
+# Plot the filters learned
+
+wncols = 4; wnrows = 4
+fig = Makie.Figure(resolution=(80wncols, 80wnrows))
+ax = Makie.Axis(fig[1,1], yreversed=true)
+Makie.image!(ax, imggrid_border(reshape(rbm.w ./ maximum(abs, rbm.w; dims=(2,3)), 15, 15, wncols, wnrows)))
 Makie.hidedecorations!(ax)
 Makie.hidespines!(ax)
 fig
