@@ -78,9 +78,16 @@ parts(rbm::DenseConvRBM) = (
 )
 
 RBMs.hidden(rbm::DenseConvRBM) = rbm.hidden
+
+channel_ndims(rbm::DenseConvRBM) = channel_ndims(parts(rbm).conv)
 kernel_ndims(rbm::DenseConvRBM) = kernel_ndims(parts(rbm).conv)
 kernel_size(rbm::DenseConvRBM) = kernel_size(parts(rbm).conv)
 hsizes(rbm::DenseConvRBM, h::AbstractArray) = hsizes(parts(rbm).conv, h)
+
+input_dims(rbm::DenseConvRBM) = (channel_ndims(rbm) + 1):(ndims(rbm.w_conv) - ndims(hidden(rbm)))
+output_dims(rbm::DenseConvRBM) = (ndims(hidden(rbm)) + 1):(ndims(hidden(rbm)) + kernel_ndims(rbm))
+
+output_size(rbm::DenseConvRBM, v_conv::AbstractArray) = output_size(parts(rbm).conv, v_conv)
 
 function RBMs.batch_size(
     rbm::DenseConvRBM, v_dense::AbstractArray, v_conv::AbstractArray, h::AbstractArray
@@ -169,36 +176,26 @@ function RBMs.interaction_energy(
 end
 
 function RBMs.free_energy(rbm::DenseConvRBM, v_dense::AbstractArray, v_conv::AbstractArray; β::Real = 1)
-    rbm.pool && error("Pooling not implemented yet for DenseConvRBM")
-
-    E_v_dense = energy(rbm.visible_dense, v_dense)
-    E_v_conv = energy(rbm.visible_conv, v_conv)
-    I = inputs_v_to_h(rbm, v_dense, v_conv)
-    F = RBMs.free_energy(hidden(rbm), I; β)
-
-    vsz_conv = vsizes(parts(rbm).conv, v_conv)
-    @assert size(E_v_dense) == batch_size(rbm.visible_dense, v_dense)
-    @assert size(E_v_conv) == (vsz_conv.input_size..., vsz_conv.batch_size...)
-    @assert size(F) == (hsizes(rbm, I).output_size..., hsizes(rbm, I).batch_size...)
-
-    # reduce over kernel dims
-    E_vconv_reduced = reshape_maybe(sum(E_v_conv; dims=1:kernel_ndims(rbm)), vsz_conv.batch_size)
-    F_reduced = reshape_maybe(sum(F; dims=1:kernel_ndims(rbm)), hsizes(rbm, I).batch_size)
-
-    return E_v_dense .+ E_vconv_reduced .+ F_reduced
+    if rbm.pool
+        return free_energy_pooled(rbm, v_dense, v_conv; β)
+    else
+        return free_energy_nopool(rbm, v_dense, v_conv; β)
+    end
 end
 
 function RBMs.sample_h_from_v(
     rbm::DenseConvRBM, v_dense::AbstractArray, v_conv::AbstractArray; β::Real = true
 )
-    rbm.pool && error("Pooling not implemented yet for DenseConvRBM")
-    inputs = inputs_v_to_h(rbm, v_dense, v_conv)
-    return transfer_sample(hidden(rbm), inputs; β)
+    if rbm.pool
+        return sample_h_from_v_pooled(rbm, v_dense, v_conv; β)
+    else
+        return sample_h_from_v_nopool(rbm, v_dense, v_conv; β)
+    end
 end
 
 function sample_v_dense_from_h(rbm::DenseConvRBM, h::AbstractArray; β::Real = true)
     inputs = inputs_h_to_v_dense(rbm, h)
-    return transfer_sample(rbm.v_dense, inputs; β)
+    return transfer_sample(rbm.visible_dense, inputs; β)
 end
 
 function sample_v_conv_from_h(rbm::DenseConvRBM, h::AbstractArray; β::Real = true)

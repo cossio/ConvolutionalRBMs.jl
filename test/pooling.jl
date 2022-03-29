@@ -4,13 +4,13 @@ import ConvolutionalRBMs as ConvRBMs
 using Test: @test, @testset, @inferred, @test_throws
 using Random: bitrand, randn!
 using LinearAlgebra: dot
-using RestrictedBoltzmannMachines: visible, hidden, weights
+using RestrictedBoltzmannMachines: visible, hidden, weights, Binary
 using RestrictedBoltzmannMachines: energy, free_energy, interaction_energy
 using RestrictedBoltzmannMachines: inputs_v_to_h, inputs_h_to_v
 using RestrictedBoltzmannMachines: sample_v_from_v, sample_h_from_h, sample_v_from_h, sample_h_from_v
 using ConvolutionalRBMs: vsizes, hsizes, BinaryConvRBM, output_size, out2in
 
-@testset "pooling" begin
+@testset "pooling ConvRBM" begin
     rbm = BinaryConvRBM(3, 2, 3; pool=true)
     randn!(weights(rbm))
     randn!(visible(rbm).θ)

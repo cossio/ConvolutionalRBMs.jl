@@ -32,9 +32,10 @@ include("categorical.jl")
 include("pcd.jl")
 include("pseudolikelihood.jl")
 
-include("denseconv/rbm.jl")
+include("denseconv/denseconvrbm.jl")
 include("denseconv/zerosum.jl")
 include("denseconv/pcd.jl")
 include("denseconv/init.jl")
+include("denseconv/pool.jl")
 
 end

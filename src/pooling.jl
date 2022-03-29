@@ -10,11 +10,6 @@ function free_energy_nopool(rbm::ConvRBM, v::AbstractArray; β::Real = true)
     return E_conv + F_conv
 end
 
-function sample_h_from_v_nopool(rbm::ConvRBM, v::AbstractArray; β::Real = true)
-    inputs = RBMs.inputs_v_to_h(rbm, v)
-    return RBMs.transfer_sample(hidden(rbm), inputs; β)
-end
-
 function free_energy_pooled(rbm::ConvRBM, v::AbstractArray; β::Real = 1)
     E = energy(visible(rbm), v)
     I = inputs_v_to_h(rbm, v)
@@ -28,6 +23,11 @@ function free_energy_pooled(rbm::ConvRBM, v::AbstractArray; β::Real = 1)
     E_reduced = reshape_maybe(sum(E; dims=1:kernel_ndims(rbm)), batch_size(rbm, v))
     F_reduced = reshape_maybe(sum(G; dims=1:ndims(hidden(rbm))), batch_size(rbm, v))
     return E_reduced + F_reduced
+end
+
+function sample_h_from_v_nopool(rbm::ConvRBM, v::AbstractArray; β::Real = true)
+    inputs = RBMs.inputs_v_to_h(rbm, v)
+    return RBMs.transfer_sample(hidden(rbm), inputs; β)
 end
 
 function sample_h_from_v_pooled(rbm::ConvRBM, v::AbstractArray; β::Real = 1)
